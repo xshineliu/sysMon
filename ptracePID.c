@@ -17,6 +17,11 @@
   Madison, 2008
 */
 
+/* 
+  other refs
+  http://www.secretmango.com/jimb/Whitepapers/ptrace/ptrace.html
+*/
+
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>
