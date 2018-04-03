@@ -38,10 +38,12 @@ const char* callname(long call);
 #define REG(reg) reg.orig_eax
 #endif
 
-int main(int argc, char* argv[]) {   
+int main(int argc, char* argv[]) {
   pid_t child;
   int status;
-  struct user_regs_struct regs; 
+  int ret;
+
+  struct user_regs_struct regs;
 
   if (argc == 1) {
     exit(0);
@@ -52,7 +54,12 @@ int main(int argc, char* argv[]) {
   //ptrace(PTRACE_SEIZE, child, NULL, NULL);
   ptrace(PTRACE_ATTACH, child, NULL, NULL);
   //ptrace(PTRACE_SYSCALL, child, NULL, NULL);
-  while(waitpid(child, &status, 0) && ! WIFEXITED(status)) {
+  while(1) {
+    ret = waitpid(child, &status, 0);
+    if( ret == 0 || WIFEXITED(status) ) {
+      fprintf(stderr, "PID %d Exited.\n", child);
+      break;
+    }
     ptrace(PTRACE_GETREGS, child, NULL, &regs);
     fprintf(stderr, " %lld - system call %s from pid %d\n", seqNO++, callname(REG(regs)), child);
     ptrace(PTRACE_SYSCALL, child, NULL, NULL);
