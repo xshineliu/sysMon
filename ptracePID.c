@@ -29,6 +29,7 @@
 #include <stdlib.h>
 
 char buf[32];
+unsigned long long seqNO = 0;
 const char* callname(long call);
 
 #if __WORDSIZE == 64
@@ -53,7 +54,7 @@ int main(int argc, char* argv[]) {
   //ptrace(PTRACE_SYSCALL, child, NULL, NULL);
   while(waitpid(child, &status, 0) && ! WIFEXITED(status)) {
     ptrace(PTRACE_GETREGS, child, NULL, &regs);
-    fprintf(stderr, "system call %s from pid %d\n", callname(REG(regs)), child);
+    fprintf(stderr, " %lld - system call %s from pid %d\n", seqNO++, callname(REG(regs)), child);
     ptrace(PTRACE_SYSCALL, child, NULL, NULL);
   }
 
