@@ -57,6 +57,7 @@ int main(int argc, char* argv[]) {
   pid_t child;
   int status;
   int ret;
+  char path[128];
 
   struct user_regs_struct regs; 
 
@@ -76,6 +77,9 @@ int main(int argc, char* argv[]) {
   } else {
     fprintf(stderr, "Attached to PID %d Successfully\n", child);
   }
+  
+  sprintf(path, "/tmp/exit_log_%d.log", child);
+  freopen(path, "w", stdout);
 
   //ptrace(PTRACE_SYSCALL, child, NULL, NULL);
   while(1) {
