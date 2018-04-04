@@ -62,7 +62,7 @@ void sig_fork(int signo)
 {
     pid_t pid;
     int stat;
-    pid=waitpid(0, &stat, WNOHANG);
+    pid = waitpid(0, &stat, WNOHANG);
     
     return;
 }
@@ -201,10 +201,14 @@ static void dump_fields_of_record(auparse_state_t *au, FILE* fp)
 			if(0 == tracer_pid) {
 				char *app = PTRACER;
 				const char *new_argv[3] = {app, auparse_get_field_str(au), NULL};
+				/* why need for deamon ? */
+				fclose(fp1);
+                                fclose(fp2);
 				execvp(app, new_argv);
 				exit(0);
 			} else {
-				waitpid(-1, NULL, WNOHANG);
+				/* prevent zombie need sigchld */
+				//waitpid(-1, NULL, WNOHANG);
 			}
 		}
 	} while (auparse_next_field(au) > 0);
