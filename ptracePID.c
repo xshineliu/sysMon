@@ -20,6 +20,7 @@
 /* 
   other refs
   http://www.secretmango.com/jimb/Whitepapers/ptrace/ptrace.html
+  https://stackoverflow.com/questions/16120871/why-sigint-is-send-to-a-child-processand-does-nothing
 */
 
 #include <sys/ptrace.h>
@@ -32,10 +33,12 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 char buf[32];
 unsigned long long seqNO = 0;
 const char* callname(long call);
+int sigval = 0;
 
 #if __WORDSIZE == 64
 #define REG(reg) reg.orig_rax
@@ -43,12 +46,12 @@ const char* callname(long call);
 #define REG(reg) reg.orig_eax
 #endif
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) {   
   pid_t child;
   int status;
   int ret;
 
-  struct user_regs_struct regs;
+  struct user_regs_struct regs; 
 
   if (argc == 1) {
     exit(0);
@@ -57,17 +60,37 @@ int main(int argc, char* argv[]) {
   child = atoi(argv[1]);
 
   //ptrace(PTRACE_SEIZE, child, NULL, NULL);
-  ptrace(PTRACE_ATTACH, child, NULL, NULL);
+  ret = ptrace(PTRACE_ATTACH, child, NULL, NULL);
+  if (ret == -1) {
+    fprintf(stderr, "Attache to PID %d Failed: errno %d\n", child, errno);
+    exit(errno);
+  }
+
   //ptrace(PTRACE_SYSCALL, child, NULL, NULL);
   while(1) {
     ret = waitpid(child, &status, 0);
-    if( ret == 0 || WIFEXITED(status) ) {
-      fprintf(stderr, "PID %d Exited.\n", child);
+    if(ret == -1) {
+      fprintf(stderr, "waitpid PID %d Failed: errno %d\n", child, errno);
+      exit(errno);
+    }
+    if(ret == 0) {
+      fprintf(stderr, "PID %d Exited with waitpid returned with 0.\n", child);
+      break;
+    }
+    /* ret the pid */
+    if(WIFEXITED(status)) {
+      fprintf(stderr, "PID %d Exited with code %d.\n", child, WEXITSTATUS(status));
+      break;
+    }
+    /* ret the pid */
+    if(WIFSIGNALED(status)) {
+      fprintf(stderr, "PID %d Exited with signal %d.\n", child, WTERMSIG(status));
       break;
     }
     ptrace(PTRACE_GETREGS, child, NULL, &regs);
     fprintf(stderr, " %lld - system call %s from pid %d\n", seqNO++, callname(REG(regs)), child);
-    ptrace(PTRACE_SYSCALL, child, NULL, NULL);
+    //ptrace(PTRACE_SYSCALL, child, NULL, NULL);
+    ptrace(PTRACE_SYSCALL, child, NULL, &sigval);
   }
 
   return 0;
