@@ -89,8 +89,8 @@ int main(int argc, char* argv[]) {
     }
     ptrace(PTRACE_GETREGS, child, NULL, &regs);
     fprintf(stderr, " %lld - system call %s from pid %d\n", seqNO++, callname(REG(regs)), child);
-    //ptrace(PTRACE_SYSCALL, child, NULL, NULL);
-    ptrace(PTRACE_SYSCALL, child, NULL, &sigval);
+    ptrace(PTRACE_SYSCALL, child, NULL, NULL);
+    //ptrace(PTRACE_SYSCALL, child, NULL, &sigval);
   }
 
   return 0;
